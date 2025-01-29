@@ -1,0 +1,149 @@
+package com.easy.query.console;
+
+import com.easy.query.api.proxy.client.DefaultEasyEntityQuery;
+import com.easy.query.api.proxy.client.EasyEntityQuery;
+import com.easy.query.console.entity.Company;
+import com.easy.query.console.entity.SysUser;
+import com.easy.query.core.api.client.EasyQueryClient;
+import com.easy.query.core.api.pagination.EasyPageResult;
+import com.easy.query.core.basic.api.database.CodeFirstExecutable;
+import com.easy.query.core.basic.api.database.DatabaseCodeFirst;
+import com.easy.query.core.bootstrapper.EasyQueryBootstrapper;
+import com.easy.query.core.logging.LogFactory;
+import com.easy.query.mysql.config.MySQLDatabaseConfiguration;
+import com.zaxxer.hikari.HikariDataSource;
+
+import javax.sql.DataSource;
+import java.util.Arrays;
+import java.util.List;
+
+public class Main {
+    private static EasyEntityQuery entityQuery;
+
+    public static void main(String[] args) {
+        LogFactory.useStdOutLogging();
+        DataSource dataSource = getDataSource();
+        EasyQueryClient client = EasyQueryBootstrapper.defaultBuilderConfiguration()
+                .setDefaultDataSource(dataSource)
+                .optionConfigure(op -> {
+                    //进行一系列可以选择的配置
+                    //op.setPrintSql(true);
+                })
+                .useDatabaseConfigure(new MySQLDatabaseConfiguration())
+                .build();
+        entityQuery = new DefaultEasyEntityQuery(client);
+
+        DatabaseCodeFirst databaseCodeFirst = entityQuery.getDatabaseCodeFirst();
+        //如果不存在数据库则创建
+        databaseCodeFirst.createDatabaseIfNotExists();
+        //自动同步数据库表
+        CodeFirstExecutable codeFirstExecutable = databaseCodeFirst.syncTables(Arrays.asList(Company.class, SysUser.class));
+        //执行命令
+        codeFirstExecutable.executeWithTransaction(arg -> {
+            System.out.println(arg.sql);
+            arg.commit();
+        });
+        test1();
+    }
+
+    /**
+     * 初始化数据源
+     *
+     * @return
+     */
+    private static DataSource getDataSource() {
+        HikariDataSource dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl("jdbc:mysql://127.0.0.1:3306/eq_db?serverTimezone=GMT%2B8&characterEncoding=utf-8&useSSL=false&allowMultiQueries=true&rewriteBatchedStatements=true");
+        dataSource.setUsername("root");
+        dataSource.setPassword("root");
+        dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
+        dataSource.setMaximumPoolSize(20);
+
+        return dataSource;
+    }
+
+
+    public static void test1() {
+        {
+            Company company = entityQuery.queryable(Company.class).firstNotNull();
+            System.out.println(company);
+        }
+        {
+            Company company = entityQuery.queryable(Company.class).firstOrNull();
+            System.out.println(company);
+        }
+        {
+            Company company = entityQuery.queryable(Company.class).singleNotNull();
+            System.out.println(company);
+        }
+        {
+            Company company = entityQuery.queryable(Company.class).singleOrNull();
+            System.out.println(company);
+        }
+        {
+            List<Company> companies = entityQuery.queryable(Company.class).toList();
+            System.out.println(companies);
+        }
+        {
+            List<Company> companies = entityQuery.queryable(Company.class).select(c -> c.FETCHER.name().createTime()).toList();
+            System.out.println(companies);
+        }
+
+        {
+            List<Company> companies = entityQuery.queryable(Company.class)
+                    .where(c -> {
+                        c.id().eq("1");
+                    }).toList();
+            System.out.println(companies);
+        }
+        {
+//多个条件and组合
+            List<Company> companies = entityQuery.queryable(Company.class)
+                    .where(c -> {
+                        c.id().eq("1");
+                        c.name().like("公司");
+                    }).toList();
+            System.out.println(companies);
+        }
+        {
+//多个条件or组合 具体请看or章节
+            List<Company> companies = entityQuery.queryable(Company.class)
+                    .where(c -> {
+                        c.or(() -> {
+                            c.id().eq("1");
+                            c.name().like("公司");
+                        });
+                    }).toList();
+            System.out.println(companies);
+        }
+
+        {
+            //限制返回条数
+            List<Company> companies = entityQuery.queryable(Company.class)
+                    .where(c -> {
+                        c.id().eq("1");
+                        c.name().like("公司");
+                    }).limit(10).toList();
+            System.out.println(companies);
+        }
+        {
+            //跳过10条然后返回20条数
+            List<Company> companies = entityQuery.queryable(Company.class)
+                    .where(c -> {
+                        c.id().eq("1");
+                        c.name().like("公司");
+                    }).limit(10,20).toList();
+            System.out.println(companies);
+        }
+
+        {
+
+//查询分页
+            EasyPageResult<Company> Company = entityQuery.queryable(Company.class).where(c -> {
+                c.id().eq("1");
+                c.name().like("公司");
+            }).toPageResult(1, 20);
+        }
+    }
+
+}
