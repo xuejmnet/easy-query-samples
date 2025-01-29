@@ -4,12 +4,16 @@ import com.easy.query.api.proxy.client.DefaultEasyEntityQuery;
 import com.easy.query.api.proxy.client.EasyEntityQuery;
 import com.easy.query.console.entity.Company;
 import com.easy.query.console.entity.SysUser;
+import com.easy.query.console.vo.CompanyNameAndUserNameVO;
+import com.easy.query.console.vo.proxy.CompanyNameAndUserNameVOProxy;
 import com.easy.query.core.api.client.EasyQueryClient;
 import com.easy.query.core.api.pagination.EasyPageResult;
 import com.easy.query.core.basic.api.database.CodeFirstExecutable;
 import com.easy.query.core.basic.api.database.DatabaseCodeFirst;
 import com.easy.query.core.bootstrapper.EasyQueryBootstrapper;
 import com.easy.query.core.logging.LogFactory;
+import com.easy.query.core.proxy.core.draft.Draft2;
+import com.easy.query.core.proxy.sql.Select;
 import com.easy.query.mysql.config.MySQLDatabaseConfiguration;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -43,7 +47,8 @@ public class Main {
             System.out.println(arg.sql);
             arg.commit();
         });
-        test1();
+//        test1();
+        test2();
     }
 
     /**
@@ -132,7 +137,7 @@ public class Main {
                     .where(c -> {
                         c.id().eq("1");
                         c.name().like("公司");
-                    }).limit(10,20).toList();
+                    }).limit(10, 20).toList();
             System.out.println(companies);
         }
 
@@ -143,6 +148,63 @@ public class Main {
                 c.id().eq("1");
                 c.name().like("公司");
             }).toPageResult(1, 20);
+        }
+    }
+
+
+    public static void test2() {
+        {
+
+            List<Company> list = entityQuery.queryable(Company.class)
+                    .leftJoin(SysUser.class, (c, u) -> c.id().eq(u.companyId()))
+                    .where((c, u) -> {
+                        c.id().eq("1");
+                        u.name().like("小明");
+                    }).toList();
+        }
+        {
+
+            List<Draft2<String, String>> list = entityQuery.queryable(Company.class)
+                    .leftJoin(SysUser.class, (c, u) -> c.id().eq(u.companyId()))
+                    .where((c, u) -> {
+                        c.id().eq("1");
+                        u.name().like("小明");
+                    }).select((c, u) -> Select.DRAFT.of(
+                            c.name(),
+                            u.name()
+                    )).toList();
+            for (Draft2<String, String> draft2 : list) {
+                String companyName = draft2.getValue1();
+                String userName = draft2.getValue2();
+            }
+        }
+
+        {
+
+            List<CompanyNameAndUserNameVO> xm = entityQuery.queryable(Company.class)
+                    .leftJoin(SysUser.class, (c, u) -> c.id().eq(u.companyId()))
+                    .where((c, u) -> {
+                        c.id().eq("1");
+                        u.name().like("小明");
+                    }).select(CompanyNameAndUserNameVO.class, (c1, s2) -> Select.of(
+                            s2.FETCHER.allFields(),
+                            s2.name().as(CompanyNameAndUserNameVO.Fields.userName),
+                            c1.name().as(CompanyNameAndUserNameVO.Fields.companyName)
+                    )).toList();
+        }
+        {
+
+            List<CompanyNameAndUserNameVO> xm = entityQuery.queryable(Company.class)
+                    .leftJoin(SysUser.class, (c, u) -> c.id().eq(u.companyId()))
+                    .where((c, u) -> {
+                        c.id().eq("1");
+                        u.name().like("小明");
+                    }).select((c1, s2) -> new CompanyNameAndUserNameVOProxy()
+                            .companyName().set(c1.name()) // 企业名称
+                            .userName().set(s2.name()) // 用户姓名
+                            .birthday().set(s2.birthday()) // 用户出生日期
+                            .companyId().set(s2.companyId()) // 用户所属企业id
+                    ).toList();
         }
     }
 
