@@ -49,6 +49,7 @@ public class Main {
         });
 //        test1();
 //        test2();
+//        test3(();
     }
 
     /**
@@ -206,6 +207,27 @@ public class Main {
                             .companyId().set(s2.companyId()) // 用户所属企业id
                     ).toList();
         }
+    }
+
+    public void test3(){
+
+        List<SysUser> userInHz = entityQuery.queryable(SysUser.class)
+                .where(u -> {
+                    //隐式子查询会自动join用户表
+                    //根据条件是否生效自动添加企业表的join
+                    u.company().name().eq("杭州公司");
+                }).toList();
+
+
+
+//筛选企业条件是企业内有至少一个用户是小明
+        List<Company> companyHasXiaoMing = entityQuery.queryable(Company.class)
+                .where(c -> {
+                    //筛选条件为企业所属用户里面有一个叫做小明的
+                    c.users().any(user -> {
+                        user.name().eq("小明");
+                    });
+                }).toList();
     }
 
 }
