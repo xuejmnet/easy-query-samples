@@ -19,27 +19,30 @@ import java.time.LocalDateTime;
  * @author xuejiaming
  */
 @Data
-@Table("t_user")
+@Table(value = "t_user",comment = "用户表")
 @EntityProxy
 @FieldNameConstants
 public class SysUser implements ProxyEntityAvailable<SysUser , SysUserProxy> {
     /**
      * 用户id
      */
-    @Column(primaryKey = true)
+    @Column(primaryKey = true,comment = "用户id",dbType = "varchar(32)")
     private String id;
     /**
      * 用户姓名
      */
+    @Column(comment = "用户姓名")
     private String name;
     /**
      * 用户出生日期
      */
+    @Column(comment = "用户出生日期")
     private LocalDateTime birthday;
 
     /**
      * 用户所属企业id
      */
+    @Column(comment = "用户所属企业id")
     private String companyId;
 
     /**

@@ -21,29 +21,38 @@ import java.util.List;
  * @author xuejiaming
  */
 @Data
-@Table("t_company")
+@Table(value = "t_company",comment = "企业表")
 @EntityProxy
 @FieldNameConstants
 public class Company implements ProxyEntityAvailable<Company , CompanyProxy> {
     /**
      * 企业id
      */
-    @Column(primaryKey = true)
+    @Column(primaryKey = true,comment = "企业id",dbType = "varchar(32)")
     private String id;
     /**
      * 企业名称
      */
+    @Column(comment = "企业名称",nullable = false)
     private String name;
 
     /**
      * 企业创建时间
      */
+    @Column(comment = "企业创建时间")
     private LocalDateTime createTime;
 
     /**
      * 注册资金
      */
+    @Column(comment = "注册资金")
     private BigDecimal registerMoney;
+
+
+    @Column(comment = "测试列",dbType = "varchar(500)",renameFrom = "column")
+    private String column1;
+
+
 
     /**
      * 企业拥有的用户
