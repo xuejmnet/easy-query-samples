@@ -4,6 +4,7 @@ import com.easy.query.api.proxy.client.DefaultEasyEntityQuery;
 import com.easy.query.api.proxy.client.EasyEntityQuery;
 import com.easy.query.console.entity.Company;
 import com.easy.query.console.entity.SysUser;
+import com.easy.query.console.entity.ValidUser;
 import com.easy.query.console.vo.CompanyNameAndUserNameVO;
 import com.easy.query.console.vo.proxy.CompanyNameAndUserNameVOProxy;
 import com.easy.query.core.api.client.EasyQueryClient;
@@ -36,12 +37,12 @@ public class Main {
                 .useDatabaseConfigure(new MySQLDatabaseConfiguration())
                 .build();
         entityQuery = new DefaultEasyEntityQuery(client);
-
+        entityQuery.setMigrationParser(new MyMyMigrationEntityParser());
         DatabaseCodeFirst databaseCodeFirst = entityQuery.getDatabaseCodeFirst();
         //如果不存在数据库则创建
         databaseCodeFirst.createDatabaseIfNotExists();
         //自动同步数据库表
-        CodeFirstCommand codeFirstExecutable = databaseCodeFirst.syncTableCommand(Arrays.asList(Company.class, SysUser.class));
+        CodeFirstCommand codeFirstExecutable = databaseCodeFirst.syncTableCommand(Arrays.asList(Company.class, SysUser.class, ValidUser.class));
         //执行命令
         codeFirstExecutable.executeWithTransaction(arg -> {
 //            System.out.println(arg.sql);
