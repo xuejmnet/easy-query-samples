@@ -6,6 +6,8 @@ import com.easy.query.core.bootstrapper.EasyQueryBootstrapper
 import com.easy.query.core.logging.LogFactory
 import com.easy.query.mysql.config.MySQLDatabaseConfiguration
 import com.test.entity.Topic
+import com.test.entity.Topic2
+import com.test.entity.proxy.TopicProxy
 import com.zaxxer.hikari.HikariDataSource
 
 fun main() {
@@ -32,5 +34,16 @@ fun main() {
         .where {
             it.id().eq("123")
         }.toList()
-
+    var toList2 = entityQuery.queryable(Topic::class.java)
+        .leftJoin(Topic::class.java) { a, b ->
+            a.id().eq(b.id())
+        }
+        .where {a, b ->
+            a.id().eq("123")
+        }.toList()
+    var id = TopicProxy.Fields.id
+//     entityQuery.queryable(Topic::class.java)
+//        .where {
+//            it.id().eq("123")
+//        }.leftJoin(Topic2::class.java)on
 }
