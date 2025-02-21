@@ -2,6 +2,7 @@ package com.easy.query.console;
 
 import com.easy.query.api.proxy.client.DefaultEasyEntityQuery;
 import com.easy.query.api.proxy.client.EasyEntityQuery;
+import com.easy.query.console.dto.CompanyDTO;
 import com.easy.query.console.entity.Company;
 import com.easy.query.console.entity.SysUser;
 import com.easy.query.console.entity.ValidUser;
@@ -11,6 +12,7 @@ import com.easy.query.core.api.client.EasyQueryClient;
 import com.easy.query.core.api.pagination.EasyPageResult;
 import com.easy.query.core.basic.api.database.CodeFirstCommand;
 import com.easy.query.core.basic.api.database.DatabaseCodeFirst;
+import com.easy.query.core.basic.jdbc.tx.Transaction;
 import com.easy.query.core.bootstrapper.EasyQueryBootstrapper;
 import com.easy.query.core.logging.LogFactory;
 import com.easy.query.core.proxy.core.draft.Draft2;
@@ -19,8 +21,12 @@ import com.easy.query.mysql.config.MySQLDatabaseConfiguration;
 import com.zaxxer.hikari.HikariDataSource;
 
 import javax.sql.DataSource;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 public class Main {
     private static EasyEntityQuery entityQuery;
@@ -48,9 +54,48 @@ public class Main {
 //            System.out.println(arg.sql);
             arg.commit();
         });
+//        init(entityQuery);
+
+
+        CompanyDTO companyDTO = entityQuery.queryable(Company.class)
+                .where(c -> c.name().like("公司1"))
+                .selectAutoInclude(CompanyDTO.class)
+                .firstNotNull();
+        System.out.println(companyDTO);
+
+
 //        test1();
 //        test2();
 //        test3(();
+    }
+
+    private static void init(EasyEntityQuery entityQuery){
+        boolean any = entityQuery.queryable(Company.class).any();
+        if(!any){
+            ArrayList<Company> companies = new ArrayList<>();
+            ArrayList<SysUser> sysUsers = new ArrayList<>();
+            for (int i = 0; i < 10; i++) {
+                Company company = new Company();
+                company.setId(UUID.randomUUID().toString().replaceAll("-",""));
+                company.setName("公司" + i);
+                company.setCreateTime(LocalDateTime.now());
+                company.setRegisterMoney(new BigDecimal(i));
+                companies.add(company);
+                for (int j = 0; j < 10; j++) {
+                    SysUser sysUser = new SysUser();
+                    sysUser.setId(UUID.randomUUID().toString().replaceAll("-",""));
+                    sysUser.setName("公司"+i+"姓名"+j);
+                    sysUser.setBirthday(LocalDateTime.now());
+                    sysUser.setCompanyId(company.getId());
+                    sysUsers.add(sysUser);
+                }
+            }
+            try(Transaction transaction = entityQuery.beginTransaction()){
+                entityQuery.insertable(companies).executeRows();
+                entityQuery.insertable(sysUsers).executeRows();
+                transaction.commit();
+            }
+        }
     }
 
     /**
