@@ -11,6 +11,7 @@ import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * create time 2025/1/28 00:11
@@ -52,4 +53,9 @@ public class SysUser implements ProxyEntityAvailable<SysUser , SysUserProxy> {
             selfProperty = {SysUser.Fields.companyId},
             targetProperty = {Company.Fields.id})
     private Company company;
+
+    @Navigate(value = RelationTypeEnum.OneToMany,
+            selfProperty = {Fields.id},
+            targetProperty = {BankCard.Fields.uid})
+    private List<BankCard> cards;
 }

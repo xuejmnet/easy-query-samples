@@ -53,7 +53,6 @@ public class Company implements ProxyEntityAvailable<Company , CompanyProxy> {
     private String column1;
 
 
-
     /**
      * 企业拥有的用户
      */
@@ -61,4 +60,5 @@ public class Company implements ProxyEntityAvailable<Company , CompanyProxy> {
             selfProperty = {Company.Fields.id},
             targetProperty = {SysUser.Fields.companyId})
     private List<SysUser> users;
+
 }

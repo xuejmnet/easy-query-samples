@@ -3,6 +3,9 @@ package com.easy.query.console;
 import com.easy.query.api.proxy.client.DefaultEasyEntityQuery;
 import com.easy.query.api.proxy.client.EasyEntityQuery;
 import com.easy.query.console.dto.CompanyDTO;
+import com.easy.query.console.dto.GroupVO;
+import com.easy.query.console.dto.SysUserDTO;
+import com.easy.query.console.dto.proxy.GroupVOProxy;
 import com.easy.query.console.entity.Company;
 import com.easy.query.console.entity.SysUser;
 import com.easy.query.console.entity.ValidUser;
@@ -16,6 +19,7 @@ import com.easy.query.core.basic.jdbc.tx.Transaction;
 import com.easy.query.core.bootstrapper.EasyQueryBootstrapper;
 import com.easy.query.core.logging.LogFactory;
 import com.easy.query.core.proxy.core.draft.Draft2;
+import com.easy.query.core.proxy.sql.GroupKeys;
 import com.easy.query.core.proxy.sql.Select;
 import com.easy.query.mysql.config.MySQLDatabaseConfiguration;
 import com.zaxxer.hikari.HikariDataSource;
@@ -48,13 +52,38 @@ public class Main {
         //如果不存在数据库则创建
         databaseCodeFirst.createDatabaseIfNotExists();
         //自动同步数据库表
-        CodeFirstCommand codeFirstExecutable = databaseCodeFirst.syncTableCommand(Arrays.asList(Company.class, SysUser.class, ValidUser.class));
+        CodeFirstCommand codeFirstCommand = databaseCodeFirst.syncTableCommand(Arrays.asList(Company.class, SysUser.class, ValidUser.class));
         //执行命令
-        codeFirstExecutable.executeWithTransaction(arg -> {
+        codeFirstCommand.executeWithTransaction(arg -> {
 //            System.out.println(arg.sql);
             arg.commit();
         });
 //        init(entityQuery);
+
+
+        String sql = entityQuery.queryable(SysUser.class)
+                .where(s -> {
+                    s.or(() -> {
+                        s.name().like("123");
+                        s.name().like("456");
+                    });
+                }).toSQL();
+        System.out.println(sql);
+
+        List<SysUser> list2 = entityQuery.queryable(SysUser.class)
+                .where(s -> {
+                    s.or(() -> {
+                        s.name().like("123");
+                        s.name().like("456");
+                    });
+                }).toList();
+
+
+        List<SysUserDTO> list = entityQuery.queryable(SysUser.class)
+                .where(s -> {
+                    s.name().like("123");
+                }).selectAutoInclude(SysUserDTO.class)
+                .toList();
 
 
         CompanyDTO companyDTO = entityQuery.queryable(Company.class)
@@ -63,34 +92,49 @@ public class Main {
                 .firstNotNull();
         System.out.println(companyDTO);
 
+        List<GroupVO> list1 = entityQuery.queryable(SysUser.class)
+                .where(s -> {
+                    s.name().like("123");
+                })
+                .groupBy(s -> GroupKeys.of(s.name()))
+                .select(group -> new GroupVOProxy()
+                        .userName().set(group.key1())
+                        .before2020Count().set(
+                                group.expression().caseWhen(() -> group.groupTable().birthday().le(LocalDateTime.of(2020, 1, 1, 0, 0, 0)))
+                                        .then(1)
+                                        .elseEnd(0).sum()
+                        )
+                        .userCount().set(group.count())
+                ).toList();
+
 
 //        test1();
 //        test2();
 //        test3(();
     }
 
-    private static void init(EasyEntityQuery entityQuery){
+    private static void init(EasyEntityQuery entityQuery) {
         boolean any = entityQuery.queryable(Company.class).any();
-        if(!any){
+        if (!any) {
             ArrayList<Company> companies = new ArrayList<>();
             ArrayList<SysUser> sysUsers = new ArrayList<>();
             for (int i = 0; i < 10; i++) {
                 Company company = new Company();
-                company.setId(UUID.randomUUID().toString().replaceAll("-",""));
+                company.setId(UUID.randomUUID().toString().replaceAll("-", ""));
                 company.setName("公司" + i);
                 company.setCreateTime(LocalDateTime.now());
                 company.setRegisterMoney(new BigDecimal(i));
                 companies.add(company);
                 for (int j = 0; j < 10; j++) {
                     SysUser sysUser = new SysUser();
-                    sysUser.setId(UUID.randomUUID().toString().replaceAll("-",""));
-                    sysUser.setName("公司"+i+"姓名"+j);
+                    sysUser.setId(UUID.randomUUID().toString().replaceAll("-", ""));
+                    sysUser.setName("公司" + i + "姓名" + j);
                     sysUser.setBirthday(LocalDateTime.now());
                     sysUser.setCompanyId(company.getId());
                     sysUsers.add(sysUser);
                 }
             }
-            try(Transaction transaction = entityQuery.beginTransaction()){
+            try (Transaction transaction = entityQuery.beginTransaction()) {
                 entityQuery.insertable(companies).executeRows();
                 entityQuery.insertable(sysUsers).executeRows();
                 transaction.commit();
@@ -255,7 +299,7 @@ public class Main {
         }
     }
 
-    public void test3(){
+    public void test3() {
 
         List<SysUser> userInHz = entityQuery.queryable(SysUser.class)
                 .where(u -> {
@@ -263,7 +307,6 @@ public class Main {
                     //根据条件是否生效自动添加企业表的join
                     u.company().name().eq("杭州公司");
                 }).toList();
-
 
 
 //筛选企业条件是企业内有至少一个用户是小明
