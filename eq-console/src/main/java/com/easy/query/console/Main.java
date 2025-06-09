@@ -60,6 +60,12 @@ public class Main {
         });
 //        init(entityQuery);
 
+        List<SysUser> users = entityQuery.queryable(SysUser.class)
+                .where(s -> {
+                    s.company().name().contains("xx有限公司");
+                }).toList();
+
+
 
         String sql = entityQuery.queryable(SysUser.class)
                 .where(s -> {

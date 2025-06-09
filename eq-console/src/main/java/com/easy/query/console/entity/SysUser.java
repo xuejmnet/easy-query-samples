@@ -51,7 +51,7 @@ public class SysUser implements ProxyEntityAvailable<SysUser , SysUserProxy> {
      */
     @Navigate(value = RelationTypeEnum.ManyToOne,
             selfProperty = {SysUser.Fields.companyId},
-            targetProperty = {Company.Fields.id})
+            targetProperty = {Company.Fields.id},required = true)
     private Company company;
 
     @Navigate(value = RelationTypeEnum.OneToMany,
